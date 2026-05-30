@@ -118,6 +118,7 @@ const crearReserva = async (req, res) => {
       id_grupo: grupo.id_grupo,
       estado: "confirmada",
       clase: clase || "turista",
+      precio_pagado: monto || 0,
     });
 
     // Guardar asiento seleccionado en vuelo_asientos

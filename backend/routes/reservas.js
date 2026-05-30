@@ -187,6 +187,7 @@ router.post("/grupo", verificarSesion, async (req, res) => {
         id_grupo: grupo.id_grupo,
         estado: "confirmada",
         clase: p.clase || "turista",
+        precio_pagado: p.monto || 0,
       });
 
       if (p.id_asiento) {
