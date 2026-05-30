@@ -103,21 +103,23 @@ const eliminarTripulacion = async (req, res) => {
     }
 
     // Verificar si está asignado a algún vuelo activo
-    const vuelos = await VueloTripulacion.findAll({
+    const asignaciones = await VueloTripulacion.findAll({
       where: { id_tripulacion: id },
-      include: [{ model: Vuelo, as: "Vuelo" }],
     });
 
-    const vuelosActivos = vuelos.filter(
-      (vt) =>
-        vt.Vuelo &&
-        (vt.Vuelo.estado === "programado" || vt.Vuelo.estado === "en_vuelo"),
-    );
+    const vuelosActivos = [];
+    for (const vt of asignaciones) {
+      const vuelo = await Vuelo.findByPk(vt.id_vuelo);
+      if (
+        vuelo &&
+        (vuelo.estado === "programado" || vuelo.estado === "en_vuelo")
+      ) {
+        vuelosActivos.push(vuelo);
+      }
+    }
 
     if (vuelosActivos.length > 0) {
-      const codigos = vuelosActivos
-        .map((vt) => vt.Vuelo.codigo_vuelo)
-        .join(", ");
+      const codigos = vuelosActivos.map((v) => v.codigo_vuelo).join(", ");
       return res.status(400).json({
         message: `No se puede eliminar. Está asignado a los vuelos: ${codigos}. Primero quítalo de esos vuelos.`,
       });
@@ -130,7 +132,6 @@ const eliminarTripulacion = async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor." });
   }
 };
-
 module.exports = {
   obtenerTripulacion,
   obtenerTripulacionPorId,
