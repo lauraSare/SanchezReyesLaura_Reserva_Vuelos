@@ -55,14 +55,17 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ─── Seguridad: Sesiones ─────────────────────────────────────
-const MySQLStore = require('express-mysql-session')(session);
-const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+let sessionStore;
+if (process.env.NODE_ENV === 'production') {
+  const MySQLStore = require('express-mysql-session')(session);
+  sessionStore = new MySQLStore({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+}
 
 app.use(
   session({
@@ -71,11 +74,11 @@ app.use(
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       maxAge: 5 * 60 * 1000,
       rolling: true,
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     },
   }),
 );
