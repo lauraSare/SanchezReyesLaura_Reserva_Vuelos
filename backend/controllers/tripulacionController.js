@@ -121,7 +121,7 @@ const eliminarTripulacion = async (req, res) => {
     if (vuelosActivos.length > 0) {
       const codigos = vuelosActivos.map((v) => v.codigo_vuelo).join(", ");
       return res.status(400).json({
-        message: `No se puede eliminar. Está asignado a los vuelos: ${codigos}. Primero quítalo de esos vuelos.`,
+        message: `No se puede eliminar. Está asignado a los vuelos: ${codigos}. Primero remplazalo de esos vuelos.`,
       });
     }
 

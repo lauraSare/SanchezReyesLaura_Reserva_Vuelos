@@ -97,7 +97,8 @@ router.get("/:id/boleto", verificarSesion, async (req, res) => {
 router.get("/grupos/todos", verificarSesion, async (req, res) => {
   try {
     const { sequelize } = require("../models/index");
-    const grupos = await sequelize.query(`
+    const grupos = await sequelize.query(
+      `
       SELECT 
         gr.id_grupo, gr.fecha_creacion,
         p.nombre AS responsable_nombre, p.primer_apellido AS responsable_apellido,
@@ -115,11 +116,153 @@ router.get("/grupos/todos", verificarSesion, async (req, res) => {
       GROUP BY gr.id_grupo, gr.fecha_creacion, p.nombre, p.primer_apellido,
                v.codigo_vuelo, ao.ciudad, ad.ciudad, pg.metodo, pg.monto_total, pg.moneda
       ORDER BY gr.fecha_creacion DESC
-    `, { type: sequelize.QueryTypes.SELECT })
-    res.json(grupos)
+    `,
+      { type: sequelize.QueryTypes.SELECT },
+    );
+    res.json(grupos);
   } catch (error) {
-    console.error("Error al obtener grupos:", error)
-    res.status(500).json({ message: "Error interno del servidor." })
+    console.error("Error al obtener grupos:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
+  }
+});
+
+// POST /api/reservas/grupo — crear reserva grupal (Familia o Amigos)
+router.post("/grupo", verificarSesion, async (req, res) => {
+  try {
+    const { id_vuelo, pasajeros, metodo_pago, tipo_grupo } = req.body;
+    if (!id_vuelo)
+      return res.status(400).json({ message: "El vuelo es obligatorio." });
+    if (!pasajeros || pasajeros.length < 2)
+      return res.status(400).json({
+        message: "Se requieren al menos 2 pasajeros para una reserva grupal.",
+      });
+    if (!metodo_pago)
+      return res
+        .status(400)
+        .json({ message: "El método de pago es obligatorio." });
+
+    const {
+      sequelize,
+      GrupoReserva,
+      Reserva,
+      Pago,
+      ReservaAsiento,
+    } = require("../models/index");
+    const { reservaObserver } = require("../services/ReservaObserver");
+
+    for (const p of pasajeros) {
+      const existe = await Reserva.findOne({
+        where: { id_pasajero: p.id_pasajero, id_vuelo, estado: "confirmada" },
+      });
+      if (existe)
+        return res.status(400).json({
+          message: `El pasajero ${p.nombre} ya tiene una reserva confirmada en este vuelo.`,
+        });
+    }
+
+    const grupo = await GrupoReserva.create({
+      id_pasajero_responsable: pasajeros[0].id_pasajero,
+      descripcion: tipo_grupo || "grupo",
+    });
+
+    let montoTotal = 0;
+    const reservasCreadas = [];
+
+    for (const p of pasajeros) {
+      const nuevaReserva = await Reserva.create({
+        id_vuelo,
+        id_pasajero: p.id_pasajero,
+        id_grupo: grupo.id_grupo,
+        estado: "confirmada",
+        clase: p.clase || "turista",
+      });
+
+      if (p.id_asiento) {
+        await sequelize.query(
+          `INSERT INTO vuelo_asientos (id_vuelo, id_asiento, estado) VALUES (:id_vuelo, :id_asiento, 'ocupado') ON DUPLICATE KEY UPDATE estado = 'ocupado'`,
+          { replacements: { id_vuelo, id_asiento: p.id_asiento } },
+        );
+        await ReservaAsiento.create({
+          id_reserva: nuevaReserva.id_reserva,
+          id_asiento: p.id_asiento,
+          precio: p.monto,
+        });
+      }
+
+      montoTotal += Number(p.monto || 0);
+      reservasCreadas.push(nuevaReserva);
+      reservaObserver.notificar("confirmada", {
+        id_reserva: nuevaReserva.id_reserva,
+      });
+    }
+
+    await Pago.create({
+      metodo: metodo_pago,
+      monto_total: montoTotal,
+      moneda: "MXN",
+      estado: "completado",
+      id_grupo: grupo.id_grupo,
+    });
+
+    res.status(201).json({
+      message: "Reserva grupal creada correctamente.",
+      id_grupo: grupo.id_grupo,
+      reservas: reservasCreadas,
+    });
+  } catch (error) {
+    console.error("Error al crear reserva grupal:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
+  }
+});
+
+// GET /api/reservas/grupos/:id/pasajeros — obtener todos los pasajeros de un grupo
+router.get("/grupos/:id/pasajeros", verificarSesion, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sequelize } = require("../models/index");
+
+    const pasajeros = await sequelize.query(
+      `
+      SELECT 
+        r.id_reserva, r.clase, r.estado,
+        p.nombre, p.primer_apellido, p.segundo_apellido, p.num_pasaporte,
+        a.numero_asiento, a.clase as clase_asiento,
+        v.codigo_vuelo, v.fecha_salida, v.fecha_llegada,
+        ao.ciudad as origen_ciudad, ao.codigo_iata as origen_iata,
+        ad.ciudad as destino_ciudad, ad.codigo_iata as destino_iata,
+        av.modelo, av.matricula,
+        pg.metodo, pg.monto_total, pg.moneda,
+        gr.descripcion as tipo_grupo
+      FROM reservas r
+      JOIN pasajeros p ON r.id_pasajero = p.id_pasajeros
+      JOIN vuelos v ON r.id_vuelo = v.id_vuelo
+      JOIN aviones av ON v.id_avion = av.id_avion
+      JOIN rutas ru ON v.id_ruta = ru.id_ruta
+      JOIN aeropuertos ao ON ru.id_origen = ao.id_aeropuerto
+      JOIN aeropuertos ad ON ru.id_destino = ad.id_aeropuerto
+      JOIN grupo_reserva gr ON r.id_grupo = gr.id_grupo
+      LEFT JOIN pagos pg ON gr.id_grupo = pg.id_grupo
+      LEFT JOIN reserva_asiento ra ON ra.id_reserva = r.id_reserva
+      LEFT JOIN asientos a ON ra.id_asiento = a.id_asiento
+      WHERE r.id_grupo = :id
+    `,
+      { replacements: { id }, type: sequelize.QueryTypes.SELECT },
+    );
+
+    const tripulacion = await sequelize.query(
+      `
+      SELECT t.nombre, t.primer_apellido, vt.rol_en_vuelo as rol
+      FROM vuelo_tripulacion vt
+      JOIN tripulacion t ON vt.id_tripulacion = t.id_tripulacion
+      WHERE vt.id_vuelo = (SELECT id_vuelo FROM reservas WHERE id_grupo = :id LIMIT 1)
+    `,
+      { replacements: { id }, type: sequelize.QueryTypes.SELECT },
+    );
+
+    res.json({ pasajeros, tripulacion });
+  } catch (error) {
+    console.error("Error al obtener pasajeros del grupo:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
   }
 });
 

@@ -76,18 +76,25 @@
                     <span v-if="!sidebarCollapsed">Aviones</span>
                 </router-link>
                 <router-link to="/grupos" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Grupos</span>
                 </router-link>
                 <router-link to="/rutas" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" /><path d="M6 16V7a6 6 0 0 1 6-6" /><path d="M18 8v9a6 6 0 0 1-6 6" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <circle cx="6" cy="19" r="3" />
+                        <circle cx="18" cy="5" r="3" />
+                        <path d="M6 16V7a6 6 0 0 1 6-6" />
+                        <path d="M18 8v9a6 6 0 0 1-6 6" />
+                    </svg>
                     <span v-if="!sidebarCollapsed">Rutas</span>
                 </router-link>
             </nav>
@@ -502,20 +509,29 @@ const getClasesDisponibles = (vuelo) => {
     return ['turista', 'ejecutiva', 'primera']
 }
 
-const calcularDescuentos = (precio, vuelo, clase) => {
+const calcularDescuentos = (precio, vuelo, tipoReserva, numPasajeros = 1) => {
     let descuento = 0
     let descuentos = []
+    let maleta = false
     const ahora = new Date()
     const salida = new Date(vuelo.fecha_salida)
     const diasAnticipacion = Math.floor((salida - ahora) / (1000 * 60 * 60 * 24))
-    if (diasAnticipacion >= 30) { descuento += 0.20; descuentos.push('20% anticipación') }
-    const hora = salida.getHours()
-    if (hora >= 22 || hora < 6) { descuento += 0.15; descuentos.push('15% vuelo nocturno') }
-    const reservasDelVuelo = todasReservas.value
-        .filter(r => r.id_vuelo === vuelo.id_vuelo && r.estado === 'confirmada')
-    if (reservasDelVuelo.length >= 2) { descuento += 0.10; descuentos.push('10% grupal') }
+
+    if (tipoReserva === 'individual') {
+        if (diasAnticipacion >= 30) {
+            descuento += 0.15
+            descuentos.push('15% por anticipación')
+            maleta = true
+        }
+    } else {
+        if (numPasajeros >= 4) {
+            descuento += 0.10
+            descuentos.push('10% descuento grupal')
+        }
+    }
+
     const precioFinal = Math.round(precio * (1 - descuento))
-    return { precioFinal, descuentos }
+    return { precioFinal, descuentos, maleta }
 }
 
 const guardarReserva = async () => {
@@ -540,7 +556,43 @@ const guardarReserva = async () => {
     const clasesDisponibles = getClasesDisponibles(vuelo)
     const tipoRuta = getTipoRuta(vuelo)
 
-    // SweetAlert 1 — Elegir clase
+    // SweetAlert 0 — Elegir tipo de reserva
+    const { value: tipoReserva } = await window.Swal.fire({
+        title: '¿Tipo de reserva?',
+        html: `
+            <div style="display:flex;flex-direction:column;gap:1rem;margin-top:0.5rem;">
+                <button id="btn-individual" style="padding:1rem;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#f0e8e0;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:0.75rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" width="22" height="22"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+                    <div><strong style="color:#c9a84c;font-size:1rem;">Individual</strong><br><small style="color:#b89a8a;">1 pasajero — 15% descuento si compras con 30+ días + maleta extra</small></div>
+                </button>
+                <button id="btn-familia" style="padding:1rem;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#f0e8e0;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:0.75rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" width="22" height="22"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <div><strong style="color:#c9a84c;font-size:1rem;">Familia</strong><br><small style="color:#b89a8a;">2+ pasajeros — 10% descuento si son 4 o más</small></div>
+                </button>
+                <button id="btn-amigos" style="padding:1rem;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#f0e8e0;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:0.75rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" width="22" height="22"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    <div><strong style="color:#c9a84c;font-size:1rem;">Amigos</strong><br><small style="color:#b89a8a;">2+ pasajeros — 10% descuento si son 4 o más</small></div>
+                </button>
+            </div>`,
+        background: '#1a0c10', color: '#f0e8e0',
+        showConfirmButton: false, showCancelButton: true,
+        cancelButtonText: 'Cancelar', cancelButtonColor: '#4a3020',
+        didOpen: () => {
+            document.getElementById('btn-individual').addEventListener('click', () => { window.swalTipoReserva = 'individual'; window.Swal.clickConfirm() })
+            document.getElementById('btn-familia').addEventListener('click', () => { window.swalTipoReserva = 'familia'; window.Swal.clickConfirm() })
+            document.getElementById('btn-amigos').addEventListener('click', () => { window.swalTipoReserva = 'amigos'; window.Swal.clickConfirm() })
+        }
+    })
+
+    const tipoSeleccionado = window.swalTipoReserva
+    if (!tipoSeleccionado) return
+
+    if (tipoSeleccionado !== 'individual') {
+        await flujoGrupal(tipoSeleccionado, vuelo, tipoRuta, clasesDisponibles)
+        return
+    }
+
+    // SweetAlert 1 — Elegir clase (Individual)
     const opcionesClase = clasesDisponibles.map(c => ({
         clase: c,
         label: c.charAt(0).toUpperCase() + c.slice(1),
@@ -582,7 +634,7 @@ const guardarReserva = async () => {
     if (!claseSeleccionada) return
 
     const precioBase = PRECIOS[tipoRuta][claseSeleccionada]
-    const { precioFinal, descuentos } = calcularDescuentos(precioBase, vuelo, claseSeleccionada)
+    const { precioFinal, descuentos, maleta } = calcularDescuentos(precioBase, vuelo, 'individual')
 
     // SweetAlert 2 — Mapa de asientos
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -745,6 +797,209 @@ const guardarReserva = async () => {
         window.swalMetodoPago = null
         window.swalAsientoSeleccionado = null
     }
+}
+
+const flujoGrupal = async (tipo, vuelo, tipoRuta, clasesDisponibles) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+    // Pasajeros disponibles para este vuelo
+    const pasajerosDisponibles = pasajerosBase.value.filter(p => {
+        const tieneReserva = todasReservas.value.some(r => r.id_vuelo === vuelo.id_vuelo && r.id_pasajero === p.id_pasajeros && r.estado === 'confirmada')
+        return !tieneReserva && p.id_pasajeros !== form.value.id_pasajero
+    })
+
+    // Incluir el pasajero principal ya seleccionado
+    const pasajerosPosibles = [
+        pasajerosBase.value.find(p => p.id_pasajeros === form.value.id_pasajero),
+        ...pasajerosDisponibles
+    ].filter(Boolean)
+
+    // Paso 1 — Seleccionar pasajeros adicionales
+    const htmlPasajeros = `
+        <p style="color:#b89a8a;margin-bottom:1rem;">Selecciona todos los pasajeros del grupo (mín. 2):</p>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;max-height:250px;overflow-y:auto;">
+            ${pasajerosPosibles.map(p => `
+                <label style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:8px;cursor:pointer;">
+                    <input type="checkbox" value="${p.id_pasajeros}" ${p.id_pasajeros === form.value.id_pasajero ? 'checked disabled' : ''}
+                        style="width:16px;height:16px;accent-color:#c9a84c;">
+                    <span style="color:#f0e8e0;">${p.nombre} ${p.primer_apellido} — <small style="color:#b89a8a;">${p.num_pasaporte}</small></span>
+                </label>
+            `).join('')}
+        </div>`
+
+    const { isConfirmed: pasajerosConfirmados } = await window.Swal.fire({
+        title: `Reserva ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`,
+        html: htmlPasajeros,
+        background: '#1a0c10', color: '#f0e8e0',
+        confirmButtonText: 'Continuar',
+        confirmButtonColor: '#c9a84c',
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#4a3020'
+    })
+    if (!pasajerosConfirmados) return
+
+    const checkboxes = document.querySelectorAll('.swal2-html-container input[type=checkbox]:checked')
+    const idsSeleccionados = Array.from(checkboxes).map(c => Number(c.value))
+
+    if (idsSeleccionados.length < 2) {
+        window.Swal.fire({ icon: 'warning', title: 'Mínimo 2 pasajeros', text: 'Debes seleccionar al menos 2 pasajeros para una reserva grupal.', background: '#1a0c10', color: '#f0e8e0', confirmButtonColor: '#c9a84c' })
+        return
+    }
+
+    const pasajerosSeleccionados = pasajerosPosibles.filter(p => idsSeleccionados.includes(p.id_pasajeros))
+    const { precioFinal: precioBase, descuentos, maleta } = calcularDescuentos(
+        PRECIOS[tipoRuta]['turista'], vuelo, tipo, pasajerosSeleccionados.length
+    )
+
+    // Paso 2 — Clase y asiento para cada pasajero
+    const reservasPasajeros = []
+    for (const pasajero of pasajerosSeleccionados) {
+        // Elegir clase
+        window.swalClaseSeleccionada = null
+        const opcionesClase = clasesDisponibles.map(c => ({
+            clase: c, label: c.charAt(0).toUpperCase() + c.slice(1), precio: PRECIOS[tipoRuta][c]
+        }))
+        const htmlClases = opcionesClase.map(op => `
+            <button class="swal-clase-btn" data-clase="${op.clase}" style="display:block;width:100%;margin:0.5rem 0;padding:1rem;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;color:#f0e8e0;cursor:pointer;text-align:left;font-family:inherit;">
+                <strong style="color:#c9a84c;">${op.label}</strong><br>
+                <small style="color:#b89a8a;">$${op.precio.toLocaleString()} MXN</small>
+            </button>`).join('')
+
+        await window.Swal.fire({
+            title: `Clase para ${pasajero.nombre} ${pasajero.primer_apellido}`,
+            html: htmlClases,
+            background: '#1a0c10', color: '#f0e8e0',
+            showConfirmButton: false, showCancelButton: true,
+            cancelButtonText: 'Cancelar', cancelButtonColor: '#4a3020',
+            didOpen: () => {
+                document.querySelectorAll('.swal-clase-btn').forEach(btn => {
+                    btn.addEventListener('click', () => { window.swalClaseSeleccionada = btn.dataset.clase; window.Swal.clickConfirm() })
+                })
+            }
+        })
+        const claseP = window.swalClaseSeleccionada
+        if (!claseP) return
+
+        // Elegir asiento
+        window.swalAsientoSeleccionado = null
+        let asientosVuelo = []
+        try {
+            const resA = await fetch(`${API_URL}/api/vuelos/${vuelo.id_vuelo}/asientos`, { credentials: 'include' })
+            asientosVuelo = await resA.json()
+        } catch { asientosVuelo = [] }
+
+        const asientosFiltrados = asientosVuelo.filter(a => {
+            if (claseP === 'turista') return a.clase === 'turista'
+            if (claseP === 'ejecutiva') return a.clase === 'ejecutiva'
+            if (claseP === 'primera') return a.clase === 'primera_clase'
+            return true
+        })
+        const filas = {}
+        asientosFiltrados.forEach(a => {
+            const fila = a.numero_asiento.replace(/[A-F]/g, '')
+            if (!filas[fila]) filas[fila] = []
+            filas[fila].push(a)
+        })
+
+        const htmlMapa = `
+            <p style="color:#b89a8a;margin-bottom:0.5rem;">Asiento para <strong style="color:#c9a84c;">${pasajero.nombre}</strong> — clase ${claseP}</p>
+            <div style="display:flex;flex-direction:column;gap:0.4rem;max-height:260px;overflow-y:auto;">
+                ${Object.entries(filas).map(([fila, asientos]) => `
+                    <div style="display:flex;align-items:center;gap:0.4rem;justify-content:center;">
+                        <span style="color:#6b5a5a;font-size:0.75rem;width:20px;text-align:right;">${fila}</span>
+                        ${asientos.map(a => {
+            const color = a.estado === 'disponible' ? '#7fd4a0' : a.estado === 'bloqueado' ? '#f0c96b' : '#f08080'
+            const bg = a.estado === 'disponible' ? 'rgba(46,155,90,0.15)' : a.estado === 'bloqueado' ? 'rgba(201,168,76,0.2)' : 'rgba(155,28,46,0.2)'
+            return `<button class="swal-asiento-btn" data-id="${a.id_asiento}" data-num="${a.numero_asiento}" ${a.estado !== 'disponible' ? 'disabled' : ''}
+                                style="width:36px;height:36px;border-radius:6px;border:1px solid ${color};cursor:${a.estado === 'disponible' ? 'pointer' : 'not-allowed'};font-size:0.7rem;font-weight:700;font-family:inherit;background:${bg};color:${color};">
+                                ${a.numero_asiento.replace(fila, '')}</button>`
+        }).join('')}
+                    </div>`).join('')}
+            </div>
+            <p id="asiento-seleccionado-label" style="margin-top:0.75rem;color:#c9a84c;font-weight:700;min-height:1.2rem;"></p>`
+
+        const { isConfirmed: asientoOk } = await window.Swal.fire({
+            title: 'Selecciona asiento',
+            html: htmlMapa,
+            background: '#1a0c10', color: '#f0e8e0',
+            confirmButtonText: 'Confirmar', confirmButtonColor: '#c9a84c',
+            showCancelButton: true, cancelButtonText: 'Cancelar', cancelButtonColor: '#4a3020',
+            didOpen: () => {
+                window.swalAsientoSeleccionado = null
+                document.querySelectorAll('.swal-asiento-btn:not([disabled])').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.swal-asiento-btn').forEach(b => { if (!b.disabled) { b.style.background = 'rgba(46,155,90,0.15)'; b.style.borderColor = '#7fd4a0'; b.style.color = '#7fd4a0' } })
+                        btn.style.background = 'rgba(201,168,76,0.3)'; btn.style.borderColor = '#c9a84c'; btn.style.color = '#c9a84c'
+                        window.swalAsientoSeleccionado = { id: btn.dataset.id, num: btn.dataset.num }
+                        const lbl = document.getElementById('asiento-seleccionado-label')
+                        if (lbl) lbl.textContent = `Asiento: ${btn.dataset.num}`
+                    })
+                })
+            }
+        })
+        if (!asientoOk || !window.swalAsientoSeleccionado) return
+
+        const precioP = Math.round(PRECIOS[tipoRuta][claseP] * (descuentos.length > 0 ? 0.90 : 1))
+        reservasPasajeros.push({
+            id_pasajero: pasajero.id_pasajeros,
+            nombre: `${pasajero.nombre} ${pasajero.primer_apellido}`,
+            clase: claseP,
+            id_asiento: window.swalAsientoSeleccionado.id,
+            num_asiento: window.swalAsientoSeleccionado.num,
+            monto: precioP
+        })
+    }
+
+    // Paso 3 — Método de pago
+    const montoTotal = reservasPasajeros.reduce((s, p) => s + p.monto, 0)
+    const htmlDesc = descuentos.length > 0 ? `<p style="color:#7fd4a0;margin:0.5rem 0;">${descuentos.join(', ')}</p>` : ''
+    window.swalMetodoPago = null
+
+    const { isConfirmed: pagoOk } = await window.Swal.fire({
+        title: 'Método de pago',
+        html: `
+            <p style="color:#b89a8a;">${pasajerosSeleccionados.length} pasajeros — ${tipo}</p>
+            ${htmlDesc}
+            <p style="font-size:1.3rem;color:#c9a84c;font-weight:800;margin:1rem 0;">Total: $${montoTotal.toLocaleString()} MXN</p>
+            <div style="display:flex;gap:1rem;justify-content:center;margin-top:1rem;">
+                <button id="btn-transferencia" style="padding:0.75rem 1.5rem;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:#c9a84c;cursor:pointer;font-family:inherit;font-weight:700;">Transferencia</button>
+                <button id="btn-efectivo" style="padding:0.75rem 1.5rem;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:#c9a84c;cursor:pointer;font-family:inherit;font-weight:700;">Efectivo</button>
+                <button id="btn-puntos" style="padding:0.75rem 1.5rem;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.4);border-radius:8px;color:#c9a84c;cursor:pointer;font-family:inherit;font-weight:700;">Puntos</button>
+            </div>`,
+        background: '#1a0c10', color: '#f0e8e0',
+        showConfirmButton: false, showCancelButton: true,
+        cancelButtonText: 'Cancelar', cancelButtonColor: '#4a3020',
+        didOpen: () => {
+            document.getElementById('btn-transferencia').addEventListener('click', () => { window.swalMetodoPago = 'transferencia'; window.Swal.clickConfirm() })
+            document.getElementById('btn-efectivo').addEventListener('click', () => { window.swalMetodoPago = 'efectivo'; window.Swal.clickConfirm() })
+            document.getElementById('btn-puntos').addEventListener('click', () => { window.swalMetodoPago = 'puntos'; window.Swal.clickConfirm() })
+        }
+    })
+    if (!pagoOk || !window.swalMetodoPago) return
+
+    loading.value = true
+    try {
+        await fetch(`${API_URL}/api/reservas/grupo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                id_vuelo: vuelo.id_vuelo,
+                tipo_grupo: tipo,
+                metodo_pago: window.swalMetodoPago,
+                pasajeros: reservasPasajeros
+            })
+        })
+        window.Swal.fire({
+            icon: 'success', title: '¡Reserva grupal confirmada!',
+            html: `<p>${pasajerosSeleccionados.length} pasajeros reservados</p><p>Total: <strong>$${montoTotal.toLocaleString()} MXN</strong></p>`,
+            background: '#1a0c10', color: '#f0e8e0', confirmButtonColor: '#c9a84c'
+        })
+        await cargarReservas()
+    } catch {
+        window.Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo crear la reserva grupal.', background: '#1a0c10', color: '#f0e8e0', confirmButtonColor: '#c9a84c' })
+    } finally { loading.value = false }
 }
 
 const confirmarEliminar = async (id) => {
@@ -1046,7 +1301,7 @@ const generarPDF = async (reserva, tripulacion) => {
     doc.text('SU EXPERIENCIA DE VUELO, NUESTRA MAYOR DISTINCION.', W / 2, 121, { align: 'center' })
 
     // QR — escanea para acceder al sistema web
-    const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=c9a84c&bgcolor=0f0508&data=${encodeURIComponent('https://sanchezreyeslaura-reserva-vuelos-frontend.onrender.com')}`
+    const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=c9a84c&bgcolor=0f0508&data=${encodeURIComponent('https://TU-LINK.onrender.com')}`
     const qrRes = await fetch(qrDataUrl)
     const qrBlob = await qrRes.blob()
     const qrBase64 = await new Promise(resolve => {

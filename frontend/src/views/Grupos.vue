@@ -57,11 +57,22 @@
                     <span v-if="!sidebarCollapsed">Reservas</span>
                 </router-link>
                 <router-link to="/tripulacion" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
                     <span v-if="!sidebarCollapsed">Tripulación</span>
                 </router-link>
                 <router-link to="/aviones" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M22 16.5H2l4-9h12l4 9z" /><path d="M6 16.5l1.5 3h9l1.5-3" /><path d="M12 7.5V4m0 0l-2 2m2-2l2 2" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M22 16.5H2l4-9h12l4 9z" />
+                        <path d="M6 16.5l1.5 3h9l1.5-3" />
+                        <path d="M12 7.5V4m0 0l-2 2m2-2l2 2" />
+                    </svg>
                     <span v-if="!sidebarCollapsed">Aviones</span>
                 </router-link>
                 <router-link to="/grupos" class="nav-item">
@@ -77,7 +88,13 @@
                     <span v-if="!sidebarCollapsed">Grupos</span>
                 </router-link>
                 <router-link to="/rutas" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" /><path d="M6 16V7a6 6 0 0 1 6-6" /><path d="M18 8v9a6 6 0 0 1-6 6" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <circle cx="6" cy="19" r="3" />
+                        <circle cx="18" cy="5" r="3" />
+                        <path d="M6 16V7a6 6 0 0 1 6-6" />
+                        <path d="M18 8v9a6 6 0 0 1-6 6" />
+                    </svg>
                     <span v-if="!sidebarCollapsed">Rutas</span>
                 </router-link>
             </nav>
@@ -197,6 +214,7 @@
                                 <th>Método Pago</th>
                                 <th>Monto</th>
                                 <th>Fecha</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -277,12 +295,30 @@ const inicializarTabla = () => {
                     data: 'monto_total',
                     render: d => d ? `<strong style="color:#c9a84c;">$${Number(d).toLocaleString()} MXN</strong>` : '—'
                 },
-                { data: 'fecha_creacion', render: d => formatFecha(d) }
+                { data: 'fecha_creacion', render: d => formatFecha(d) },
+                {
+                    data: 'id_grupo', orderable: false,
+                    render: id => `
+                        <div class="action-btns">
+                            <button class="btn-boleto-grupo" data-id="${id}" title="Boleto grupal">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                                    <path d="M2 9a1 1 0 0 1 0-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a1 1 0 0 1 0 2v2a1 1 0 0 1 0 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a1 1 0 0 1 0-2V9z"/>
+                                    <line x1="9" y1="12" x2="15" y2="12"/>
+                                    <line x1="12" y1="9" x2="12" y2="15"/>
+                                </svg>
+                            </button>
+                        </div>`
+                }
             ],
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-MX.json' },
             pageLength: 10,
             dom: '<"dt-top"lf>rt<"dt-bottom"ip>',
-            order: [[0, 'desc']]
+            order: [[0, 'desc']],
+            drawCallback: () => {
+                document.querySelectorAll('.btn-boleto-grupo').forEach(btn => {
+                    btn.onclick = () => verBoletoGrupal(Number(btn.dataset.id))
+                })
+            }
         })
     })
 }
@@ -293,6 +329,158 @@ const cargarGrupos = async () => {
         grupos.value = await res.json()
         inicializarTabla()
     } catch { console.error('Error al cargar grupos') }
+}
+
+const verBoletoGrupal = async (id) => {
+    try {
+        const res = await fetch(`${API_URL}/api/reservas/grupos/${id}/pasajeros`, { credentials: 'include' })
+        const data = await res.json()
+        const { pasajeros, tripulacion } = data
+        if (!pasajeros || pasajeros.length === 0) {
+            window.Swal.fire({ icon: 'warning', title: 'Sin datos', text: 'No se encontraron pasajeros en este grupo.', background: '#1a0c10', color: '#f0e8e0', confirmButtonColor: '#c9a84c' })
+            return
+        }
+        const piloto = tripulacion?.find(t => t.rol === 'piloto')
+        const copiloto = tripulacion?.find(t => t.rol === 'copiloto')
+        const p0 = pasajeros[0]
+        const tipo = p0.tipo_grupo ? (p0.tipo_grupo.charAt(0).toUpperCase() + p0.tipo_grupo.slice(1)) : 'Grupo'
+
+        const htmlPasajeros = pasajeros.map((p, i) => `
+            <div style="padding:0.75rem;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);border-radius:8px;margin-bottom:0.5rem;text-align:left;">
+                <strong style="color:#c9a84c;">${i + 1}. ${p.nombre} ${p.primer_apellido}</strong>
+                <span style="color:#b89a8a;font-size:0.8rem;"> — ${p.num_pasaporte}</span><br>
+                <small style="color:#b89a8a;">Asiento: <strong style="color:#f0e8e0;">${p.numero_asiento || '—'}</strong> | Clase: <strong style="color:#f0e8e0;">${p.clase || '—'}</strong></small>
+            </div>`).join('')
+
+        const resultBoleto = await window.Swal.fire({
+            title: `Boleto Grupal — ${tipo}`,
+            html: `
+                <div style="text-align:center;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid rgba(201,168,76,0.2);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="1.5" width="42" height="42">
+                        <path d="M22 16.5H2l4-9h12l4 9z"/><path d="M6 16.5l1.5 3h9l1.5-3"/><path d="M12 7.5V4m0 0l-2 2m2-2l2 2"/>
+                    </svg>
+                    <p style="color:#c9a84c;font-size:0.75rem;letter-spacing:2px;margin:0.5rem 0 0;">AEROLÍNEA QUETZAL</p>
+                </div>
+                <div style="text-align:left;font-size:0.85rem;margin-bottom:1rem;">
+                    <p><span style="color:#c9a84c;font-weight:700;">Vuelo:</span> ${p0.codigo_vuelo}</p>
+                    <p><span style="color:#c9a84c;font-weight:700;">Ruta:</span> ${p0.origen_ciudad} (${p0.origen_iata}) → ${p0.destino_ciudad} (${p0.destino_iata})</p>
+                    <p><span style="color:#c9a84c;font-weight:700;">Salida:</span> ${formatFecha(p0.fecha_salida)}</p>
+                    <p><span style="color:#c9a84c;font-weight:700;">Avión:</span> ${p0.modelo} (${p0.matricula})</p>
+                    <p><span style="color:#c9a84c;font-weight:700;">Pago:</span> ${p0.metodo} — $${Number(p0.monto_total).toLocaleString()} MXN</p>
+                    ${piloto ? `<p><span style="color:#c9a84c;font-weight:700;">Piloto:</span> ${piloto.nombre} ${piloto.primer_apellido}</p>` : ''}
+                </div>
+                <p style="color:#c9a84c;font-weight:700;margin-bottom:0.5rem;">Pasajeros (${pasajeros.length}):</p>
+                ${htmlPasajeros}`,
+            background: '#1a0c10', color: '#f0e8e0',
+            confirmButtonText: '📄 Descargar PDF Grupal',
+            confirmButtonColor: '#c9a84c',
+            showCancelButton: true, cancelButtonText: 'Cerrar', cancelButtonColor: '#4a3020',
+            width: '600px'
+        })
+
+        if (resultBoleto.isConfirmed) {
+            await generarPDFGrupal(pasajeros, tripulacion, tipo)
+        }
+    } catch (err) {
+        console.error(err)
+        window.Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar el boleto grupal.', background: '#1a0c10', color: '#f0e8e0', confirmButtonColor: '#c9a84c' })
+    }
+}
+
+const cargarFuenteCinzel = async () => {
+    const url = 'https://raw.githubusercontent.com/google/fonts/main/ofl/cinzel/Cinzel%5Bwght%5D.ttf'
+    const res = await fetch(url)
+    const buffer = await res.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i])
+    return btoa(binary)
+}
+
+const generarPDFGrupal = async (pasajeros, tripulacion, tipo) => {
+    const { jsPDF } = window.jspdf
+    const p0 = pasajeros[0]
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [210, 175] })
+    const W = doc.internal.pageSize.getWidth()
+    const H = doc.internal.pageSize.getHeight()
+
+    const cinzelBase64 = await cargarFuenteCinzel()
+    doc.addFileToVFS('Cinzel.ttf', cinzelBase64)
+    doc.addFont('Cinzel.ttf', 'Cinzel', 'normal')
+
+    doc.setFillColor(15, 5, 8)
+    doc.rect(0, 0, W, H, 'F')
+    doc.setDrawColor(90, 60, 10); doc.setLineWidth(2); doc.rect(5, 5, W - 10, H - 10)
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.6); doc.rect(5, 5, W - 10, H - 10)
+    doc.setDrawColor(255, 215, 106); doc.setLineWidth(0.25); doc.rect(7.5, 7.5, W - 15, H - 15)
+
+    for (let i = 0; i < 18; i++) {
+        const t = i / 18
+        doc.setFillColor(Math.round(80 + (18 - 80) * t), Math.round(10 + (3 - 10) * t), Math.round(20 + (8 - 20) * t))
+        doc.rect(5, 5 + i, W - 10, 1.1, 'F')
+    }
+
+    doc.setFont('Cinzel', 'normal'); doc.setFontSize(13); doc.setTextColor(255, 215, 106)
+    doc.text('AEROLINEA QUETZAL', W / 2, 17, { align: 'center' })
+    doc.setFontSize(8); doc.setTextColor(180, 154, 138)
+    doc.text(`BOLETO GRUPAL — ${tipo.toUpperCase()}`, W / 2, 23, { align: 'center' })
+
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.4); doc.line(12, 26, W - 12, 26)
+
+    doc.setFontSize(36); doc.setTextColor(90, 60, 10)
+    doc.text(p0.origen_iata, W / 2 - 40.4, 45.4, { align: 'center' })
+    doc.text(p0.destino_iata, W / 2 + 40.4, 45.4, { align: 'center' })
+    doc.setTextColor(255, 215, 106); doc.text(p0.origen_iata, W / 2 - 40, 45, { align: 'center' })
+    doc.setTextColor(201, 168, 76); doc.text(p0.destino_iata, W / 2 + 40, 45, { align: 'center' })
+    doc.setFontSize(9); doc.setTextColor(180, 154, 138)
+    doc.text(p0.origen_ciudad, W / 2 - 40, 51, { align: 'center' })
+    doc.text(p0.destino_ciudad, W / 2 + 40, 51, { align: 'center' })
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.3)
+    doc.line(W / 2 - 24, 43, W / 2 + 24, 43)
+    doc.setFillColor(201, 168, 76); doc.triangle(W / 2 + 24, 43, W / 2 + 20, 41, W / 2 + 20, 45, 'F')
+
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.2); doc.line(12, 56, W - 12, 56)
+
+    doc.setFontSize(8); doc.setTextColor(180, 154, 138); doc.setFont('helvetica', 'normal')
+    doc.text('VUELO', 20, 63); doc.text('SALIDA', W / 2, 63, { align: 'center' }); doc.text('AVIÓN', W - 20, 63, { align: 'right' })
+    doc.setFontSize(10); doc.setTextColor(240, 232, 224); doc.setFont('helvetica', 'bold')
+    doc.text(p0.codigo_vuelo, 20, 70)
+    doc.text(formatFecha(p0.fecha_salida), W / 2, 70, { align: 'center' })
+    doc.text(`${p0.modelo} (${p0.matricula})`, W - 20, 70, { align: 'right' })
+
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.2); doc.line(12, 75, W - 12, 75)
+
+    // Pasajeros
+    doc.setFontSize(8); doc.setTextColor(180, 154, 138); doc.setFont('helvetica', 'normal')
+    doc.text(`PASAJEROS DEL GRUPO (${pasajeros.length})`, 20, 81)
+    let y = 89
+    pasajeros.forEach((p, i) => {
+        doc.setFontSize(9); doc.setTextColor(240, 232, 224); doc.setFont('helvetica', 'bold')
+        doc.text(`${i + 1}. ${p.nombre} ${p.primer_apellido}`, 20, y)
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(180, 154, 138); doc.setFontSize(8)
+        doc.text(`Pasaporte: ${p.num_pasaporte}  |  Asiento: ${p.numero_asiento || '—'}  |  Clase: ${p.clase || '—'}`, 20, y + 5)
+        y += 13
+    })
+
+    doc.setDrawColor(201, 168, 76); doc.setLineWidth(0.3); doc.line(12, y + 2, W - 12, y + 2)
+
+    const piloto = tripulacion?.find(t => t.rol === 'piloto')
+    doc.setFontSize(7); doc.setTextColor(180, 154, 138); doc.setFont('helvetica', 'normal')
+    doc.text('PAGO', 20, y + 8)
+    doc.text(piloto ? 'PILOTO' : '', W / 2, y + 8, { align: 'center' })
+    doc.setFontSize(7.5); doc.setTextColor(240, 232, 224); doc.setFont('helvetica', 'bold')
+    doc.text(`${p0.metodo} — $${Number(p0.monto_total).toLocaleString()} MXN`, 20, y + 13)
+    if (piloto) doc.text(`${piloto.nombre} ${piloto.primer_apellido}`, W / 2, y + 13, { align: 'center' })
+
+    doc.setFontSize(9); doc.setTextColor(255, 215, 106); doc.setFont('Cinzel', 'normal')
+    doc.text('QUETZAL: PRECISION, CONFORT Y DESTINO.', W / 2, H - 15, { align: 'center' })
+
+    const qrRes = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=c9a84c&bgcolor=0f0508&data=${encodeURIComponent('https://sanchezreyeslaura-reserva-vuelos-frontend.onrender.com')}`)
+    const qrBlob = await qrRes.blob()
+    const qrBase64 = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(qrBlob) })
+    doc.addImage(qrBase64, 'PNG', W - 30, H - 30, 18, 18)
+
+    doc.save(`boleto-grupal-${tipo}-${p0.codigo_vuelo}.pdf`)
 }
 
 const handleLogout = async () => {
@@ -736,6 +924,29 @@ onMounted(async () => {
     background: rgba(100, 120, 200, 0.15);
     color: #a0b4f0;
     border: 1px solid rgba(100, 120, 200, 0.3);
+}
+
+:deep(.action-btns) {
+    display: flex;
+    gap: 0.5rem;
+}
+
+:deep(.btn-boleto-grupo) {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(46, 155, 90, 0.12);
+    color: #7fd4a0;
+}
+
+:deep(.btn-boleto-grupo:hover) {
+    background: rgba(46, 155, 90, 0.28);
 }
 
 @media (max-width: 768px) {
