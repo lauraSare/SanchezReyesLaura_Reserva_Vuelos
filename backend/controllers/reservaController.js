@@ -70,18 +70,40 @@ const obtenerReservaPorId = async (req, res) => {
 // ─── Crear una reserva con pago ───────────────────────────────
 const crearReserva = async (req, res) => {
   try {
-    const { id_vuelo, id_pasajero, clase, metodo_pago, monto, id_asiento } = req.body;
+    const { id_vuelo, id_pasajero, clase, metodo_pago, monto, id_asiento } =
+      req.body;
 
     // Verificar que el pasajero no tenga reserva activa en este vuelo
     const reservaExistente = await Reserva.findOne({
       where: { id_pasajero, id_vuelo, estado: "confirmada" },
     });
     if (reservaExistente) {
-      return res
-        .status(400)
-        .json({
-          message: "El pasajero ya tiene una reserva confirmada en este vuelo.",
-        });
+      return res.status(400).json({
+        message: "El pasajero ya tiene una reserva confirmada en este vuelo.",
+      });
+    }
+
+    // Verificar que el pasajero no tenga reserva en la misma fecha de salida
+    const { sequelize } = require("../models/index");
+    const [conflicto] = await sequelize.query(
+      `
+      SELECT r.id_reserva FROM reservas r
+      JOIN vuelos v ON r.id_vuelo = v.id_vuelo
+      JOIN vuelos v2 ON v2.id_vuelo = :id_vuelo
+      WHERE r.id_pasajero = :id_pasajero
+      AND r.estado = 'confirmada'
+      AND DATE(v.fecha_salida) = DATE(v2.fecha_salida)
+    `,
+      {
+        replacements: { id_pasajero, id_vuelo },
+        type: sequelize.QueryTypes.SELECT,
+      },
+    );
+
+    if (conflicto) {
+      return res.status(400).json({
+        message: "El pasajero ya tiene una reserva en esa fecha de salida.",
+      });
     }
 
     // Crear grupo de reserva
@@ -105,7 +127,7 @@ const crearReserva = async (req, res) => {
         `INSERT INTO vuelo_asientos (id_vuelo, id_asiento, estado)
          VALUES (:id_vuelo, :id_asiento, 'ocupado')
          ON DUPLICATE KEY UPDATE estado = 'ocupado'`,
-        { replacements: { id_vuelo, id_asiento } }
+        { replacements: { id_vuelo, id_asiento } },
       );
       // Registrar asiento en reserva_asiento (relación N:M reserva-asiento)
       await ReservaAsiento.create({
@@ -125,14 +147,14 @@ const crearReserva = async (req, res) => {
     });
 
     // Patrón Observer — notifica a los suscriptores que se creó una reserva
-    reservaObserver.notificar("confirmada", { id_reserva: nuevaReserva.id_reserva });
+    reservaObserver.notificar("confirmada", {
+      id_reserva: nuevaReserva.id_reserva,
+    });
 
-    res
-      .status(201)
-      .json({
-        message: "Reserva creada correctamente.",
-        reserva: nuevaReserva,
-      });
+    res.status(201).json({
+      message: "Reserva creada correctamente.",
+      reserva: nuevaReserva,
+    });
   } catch (error) {
     console.error("Error al crear reserva:", error);
     res.status(500).json({ message: "Error interno del servidor." });

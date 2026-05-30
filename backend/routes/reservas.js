@@ -154,10 +154,22 @@ router.post("/grupo", verificarSesion, async (req, res) => {
       const existe = await Reserva.findOne({
         where: { id_pasajero: p.id_pasajero, id_vuelo, estado: "confirmada" },
       });
-      if (existe)
-        return res.status(400).json({
-          message: `El pasajero ${p.nombre} ya tiene una reserva confirmada en este vuelo.`,
-        });
+      if (existe) return res.status(400).json({
+        message: `El pasajero ${p.nombre} ya tiene una reserva confirmada en este vuelo.`,
+      });
+
+      const [conflictoFecha] = await sequelize.query(`
+        SELECT r.id_reserva FROM reservas r
+        JOIN vuelos v ON r.id_vuelo = v.id_vuelo
+        JOIN vuelos v2 ON v2.id_vuelo = :id_vuelo
+        WHERE r.id_pasajero = :id_pasajero
+        AND r.estado = 'confirmada'
+        AND DATE(v.fecha_salida) = DATE(v2.fecha_salida)
+      `, { replacements: { id_pasajero: p.id_pasajero, id_vuelo }, type: sequelize.QueryTypes.SELECT });
+
+      if (conflictoFecha) return res.status(400).json({
+        message: `${p.nombre} ya tiene una reserva en esa fecha de salida.`,
+      });
     }
 
     const grupo = await GrupoReserva.create({
