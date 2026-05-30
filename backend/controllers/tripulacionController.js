@@ -50,12 +50,10 @@ const crearTripulacion = async (req, res) => {
       rol,
     });
 
-    res
-      .status(201)
-      .json({
-        message: "Miembro de tripulación creado correctamente.",
-        tripulacion: nuevoMiembro,
-      });
+    res.status(201).json({
+      message: "Miembro de tripulación creado correctamente.",
+      tripulacion: nuevoMiembro,
+    });
   } catch (error) {
     console.error("Error al crear tripulación:", error);
     res.status(500).json({ message: "Error interno del servidor." });
@@ -102,6 +100,27 @@ const eliminarTripulacion = async (req, res) => {
       return res
         .status(404)
         .json({ message: "Miembro de tripulación no encontrado." });
+    }
+
+    // Verificar si está asignado a algún vuelo activo
+    const vuelos = await VueloTripulacion.findAll({
+      where: { id_tripulacion: id },
+      include: [{ model: Vuelo, as: "Vuelo" }],
+    });
+
+    const vuelosActivos = vuelos.filter(
+      (vt) =>
+        vt.Vuelo &&
+        (vt.Vuelo.estado === "programado" || vt.Vuelo.estado === "en_vuelo"),
+    );
+
+    if (vuelosActivos.length > 0) {
+      const codigos = vuelosActivos
+        .map((vt) => vt.Vuelo.codigo_vuelo)
+        .join(", ");
+      return res.status(400).json({
+        message: `No se puede eliminar. Está asignado a los vuelos: ${codigos}. Primero quítalo de esos vuelos.`,
+      });
     }
 
     await miembro.destroy();
