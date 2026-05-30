@@ -1046,7 +1046,7 @@ const generarPDF = async (reserva, tripulacion) => {
     doc.text('SU EXPERIENCIA DE VUELO, NUESTRA MAYOR DISTINCION.', W / 2, 121, { align: 'center' })
 
     // QR — escanea para acceder al sistema web
-    const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=c9a84c&bgcolor=0f0508&data=${encodeURIComponent('https://TU-LINK.onrender.com')}`
+    const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=c9a84c&bgcolor=0f0508&data=${encodeURIComponent('https://sanchezreyeslaura-reserva-vuelos-frontend.onrender.com')}`
     const qrRes = await fetch(qrDataUrl)
     const qrBlob = await qrRes.blob()
     const qrBase64 = await new Promise(resolve => {
