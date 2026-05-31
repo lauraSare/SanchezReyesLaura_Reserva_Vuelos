@@ -378,15 +378,17 @@ const inicializarTabla = () => {
                 { data: 'Vuelo', render: v => v ? v.codigo_vuelo : '—' },
                 {
                     data: 'id_reserva', orderable: false,
-                    render: id => `
-                        <div class="action-btns">
-                            <button class="btn-boleto" data-id="${id}" title="Ver boleto">
+                    render: id => {
+                        const r = reservas.value.find(r => r.id_reserva === id)
+                        const esGrupal = r?.id_grupo
+                        return `<div class="action-btns">
+                            ${!esGrupal ? `<button class="btn-boleto" data-id="${id}" title="Ver boleto">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                                     <path d="M2 9a1 1 0 0 1 0-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a1 1 0 0 1 0 2v2a1 1 0 0 1 0 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a1 1 0 0 1 0-2V9z"/>
                                     <line x1="9" y1="12" x2="15" y2="12"/>
                                     <line x1="12" y1="9" x2="12" y2="15"/>
                                 </svg>
-                            </button>
+                            </button>` : ''}
                             <button class="btn-edit" data-id="${id}" title="Editar">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -402,6 +404,7 @@ const inicializarTabla = () => {
                                 </svg>
                             </button>
                         </div>`
+                    }
                 }
             ],
             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-MX.json' },
