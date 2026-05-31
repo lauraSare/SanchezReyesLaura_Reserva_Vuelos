@@ -29,6 +29,25 @@
                     </svg>
                     <span v-if="!sidebarCollapsed">Dashboard</span>
                 </router-link>
+                <router-link to="/rutas" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <circle cx="6" cy="19" r="3" />
+                        <circle cx="18" cy="5" r="3" />
+                        <path d="M6 16V7a6 6 0 0 1 6-6" />
+                        <path d="M18 8v9a6 6 0 0 1-6 6" />
+                    </svg>
+                    <span v-if="!sidebarCollapsed">Rutas</span>
+                </router-link>
+                <router-link to="/aviones" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M22 16.5H2l4-9h12l4 9z" />
+                        <path d="M6 16.5l1.5 3h9l1.5-3" />
+                        <path d="M12 7.5V4m0 0l-2 2m2-2l2 2" />
+                    </svg>
+                    <span v-if="!sidebarCollapsed">Aviones</span>
+                </router-link>
                 <router-link to="/vuelos" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
                         height="20">
@@ -36,6 +55,16 @@
                         <path d="M22 2L15 22l-4-9-9-4 20-7z" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Vuelos</span>
+                </router-link>
+                <router-link to="/tripulacion" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span v-if="!sidebarCollapsed">Tripulación</span>
                 </router-link>
                 <router-link to="/pasajeros" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
@@ -58,43 +87,17 @@
                     </svg>
                     <span v-if="!sidebarCollapsed">Reservas</span>
                 </router-link>
-                <router-link to="/tripulacion" class="nav-item">
+                <router-link to="/grupos" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
                         height="20">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <span v-if="!sidebarCollapsed">Tripulación</span>
-                </router-link>
-                <router-link to="/aviones" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
-                        height="20">
-                        <path d="M22 16.5H2l4-9h12l4 9z" />
-                        <path d="M6 16.5l1.5 3h9l1.5-3" />
-                        <path d="M12 7.5V4m0 0l-2 2m2-2l2 2" />
-                    </svg>
-                    <span v-if="!sidebarCollapsed">Aviones</span>
-                </router-link>
-                <router-link to="/grupos" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Grupos</span>
-                </router-link>
-                <router-link to="/rutas" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
-                        height="20">
-                        <circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" />
-                        <path d="M6 16V7a6 6 0 0 1 6-6" /><path d="M18 8v9a6 6 0 0 1-6 6" />
-                    </svg>
-                    <span v-if="!sidebarCollapsed">Rutas</span>
                 </router-link>
             </nav>
 
@@ -725,24 +728,30 @@ const handleLogout = async () => {
         flex-direction: column;
         align-items: flex-start;
     }
+
     .table-card {
         padding: 0.5rem;
     }
+
     :deep(.quetzal-table) {
         font-size: 0.75rem !important;
     }
+
     :deep(.quetzal-table thead th) {
         padding: 0.5rem 0.4rem !important;
         font-size: 0.65rem !important;
     }
+
     :deep(.quetzal-table tbody td) {
         padding: 0.5rem 0.4rem !important;
         font-size: 0.75rem !important;
     }
+
     :deep(.action-btns) {
         flex-direction: column;
         gap: 0.25rem;
     }
+
     :deep(.btn-edit),
     :deep(.btn-delete) {
         width: 26px;
