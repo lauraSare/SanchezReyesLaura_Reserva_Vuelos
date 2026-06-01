@@ -31,8 +31,10 @@
                 <router-link to="/rutas" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
                         height="20">
-                        <circle cx="6" cy="19" r="3" /><circle cx="18" cy="5" r="3" />
-                        <path d="M6 16V7a6 6 0 0 1 6-6" /><path d="M18 8v9a6 6 0 0 1-6 6" />
+                        <circle cx="6" cy="19" r="3" />
+                        <circle cx="18" cy="5" r="3" />
+                        <path d="M6 16V7a6 6 0 0 1 6-6" />
+                        <path d="M18 8v9a6 6 0 0 1-6 6" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Rutas</span>
                 </router-link>
@@ -84,13 +86,14 @@
                     <span v-if="!sidebarCollapsed">Reservas</span>
                 </router-link>
                 <router-link to="/grupos" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Grupos</span>
                 </router-link>
@@ -336,6 +339,12 @@ const inicializarTabla = () => {
                     data: 'id_pasajeros', orderable: false,
                     render: id => `
                         <div class="action-btns">
+                            <button class="btn-view" data-id="${id}" title="Ver reservas">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
                             <button class="btn-edit" data-id="${id}" title="Editar">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -357,6 +366,9 @@ const inicializarTabla = () => {
             pageLength: 10,
             dom: '<"dt-top"lf>rt<"dt-bottom"ip>',
             drawCallback: () => {
+                document.querySelectorAll('.btn-view').forEach(btn => {
+                    btn.onclick = () => verDetallePasajero(Number(btn.dataset.id))
+                })
                 document.querySelectorAll('.btn-edit').forEach(btn => {
                     btn.onclick = () => abrirModalEditar(Number(btn.dataset.id))
                 })
@@ -366,6 +378,42 @@ const inicializarTabla = () => {
             }
         })
     })
+}
+
+const verDetallePasajero = async (id) => {
+    const pasajero = pasajeros.value.find(p => p.id_pasajeros === id)
+    if (!pasajero) return
+    try {
+        const res = await axios.get(`${API_URL}/api/reservas`, { withCredentials: true })
+        const reservasPasajero = res.data.filter(r => r.id_pasajero === id)
+        const htmlReservas = reservasPasajero.length > 0
+            ? reservasPasajero.map(r => {
+                const estadoColor = r.estado === 'confirmada' ? '#7fd4a0' : r.estado === 'cancelada' ? '#f08080' : '#c9a84c'
+                const estadoBg = r.estado === 'confirmada' ? 'rgba(46,155,90,0.15)' : r.estado === 'cancelada' ? 'rgba(155,28,46,0.2)' : 'rgba(201,168,76,0.15)'
+                return `
+                <div style="padding:0.6rem;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);border-radius:8px;margin-bottom:0.5rem;">
+                    <strong style="color:#c9a84c;">${r.Vuelo?.codigo_vuelo || '—'}</strong>
+                    <span style="margin-left:0.5rem;padding:0.15rem 0.5rem;border-radius:10px;font-size:0.7rem;font-weight:700;background:${estadoBg};color:${estadoColor};">${r.estado}</span><br>
+                    <small style="color:#b89a8a;">Fecha: ${new Date(r.fecha_reserva).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</small>
+                </div>`}).join('')
+            : '<p style="color:#b89a8a;text-align:center;">Sin reservas registradas</p>'
+
+        window.Swal.fire({
+            title: `${pasajero.nombre} ${pasajero.primer_apellido}`,
+            html: `
+                <div style="text-align:left;">
+                    <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Pasaporte:</span> ${pasajero.num_pasaporte}</p>
+                    <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Correo:</span> ${pasajero.correo}</p>
+                    <p style="color:#b89a8a;margin-bottom:1rem;"><span style="color:#c9a84c;font-weight:700;">Teléfono:</span> ${pasajero.telefono || '—'}</p>
+                    <p style="color:#c9a84c;font-weight:700;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.5rem;">Reservas</p>
+                    <div style="max-height:250px;overflow-y:auto;">${htmlReservas}</div>
+                </div>`,
+            background: '#1a0c10', color: '#f0e8e0',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#4a3020',
+            width: '520px'
+        })
+    } catch { console.error('Error al cargar detalle') }
 }
 
 const cargarPasajeros = async () => {
@@ -889,6 +937,24 @@ onMounted(async () => {
     transition: all 0.2s;
 }
 
+:deep(.btn-view) {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(201, 168, 76, 0.12);
+    color: #c9a84c;
+}
+
+:deep(.btn-view:hover) {
+    background: rgba(201, 168, 76, 0.25);
+}
+
 :deep(.btn-edit) {
     background: rgba(201, 168, 76, 0.12);
     color: #c9a84c;
@@ -1136,24 +1202,30 @@ onMounted(async () => {
         flex-direction: column;
         align-items: flex-start;
     }
+
     .table-card {
         padding: 0.5rem;
     }
+
     :deep(.quetzal-table) {
         font-size: 0.75rem !important;
     }
+
     :deep(.quetzal-table thead th) {
         padding: 0.5rem 0.4rem !important;
         font-size: 0.65rem !important;
     }
+
     :deep(.quetzal-table tbody td) {
         padding: 0.5rem 0.4rem !important;
         font-size: 0.75rem !important;
     }
+
     :deep(.action-btns) {
         flex-direction: column;
         gap: 0.25rem;
     }
+
     :deep(.btn-edit),
     :deep(.btn-delete) {
         width: 26px;
