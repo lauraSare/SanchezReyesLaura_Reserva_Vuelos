@@ -21,6 +21,7 @@ const obtenerVuelos = async (req, res) => {
           ],
         },
         { model: Avion },
+        { model: Tripulacion, through: { attributes: ['rol_en_vuelo'] } },
       ],
     });
     res.json(vuelos);

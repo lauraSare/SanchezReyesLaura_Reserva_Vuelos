@@ -420,7 +420,7 @@ const verDetalleTripulante = async (id) => {
         const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/vuelos`, { credentials: 'include' })
         const vuelos = await res.json()
         const vuelosMiembro = vuelos.filter(v =>
-            v.Tripulacion?.some(t => t.id_tripulacion === id)
+            (v.Tripulacions || v.Tripulacion || []).some(t => Number(t.id_tripulacion) === Number(id))
         )
         const htmlVuelos = vuelosMiembro.length > 0
             ? vuelosMiembro.map(v => `
