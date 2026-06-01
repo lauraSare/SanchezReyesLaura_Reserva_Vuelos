@@ -507,9 +507,9 @@ const abrirModalEditar = (id) => {
 const cerrarModal = () => { mostrarModal.value = false }
 
 const PRECIOS = {
-    nacional: { turista: 2500, ejecutiva: 6000, primera: 9000 },
-    eua: { turista: 6500, ejecutiva: 12000, primera: 18000 },
-    europa: { turista: 12000, ejecutiva: 17000, primera: 22000 }
+    nacional: { turista: 2500, ejecutiva: 3000, primera: 4500 },
+    eua: { turista: 1000, ejecutiva: 2500, primera: 3000 },
+    europa: { turista: 6000, ejecutiva: 8000, primera: 10500 }
 }
 
 const BENEFICIOS = {
