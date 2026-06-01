@@ -86,13 +86,14 @@
                     <span v-if="!sidebarCollapsed">Reservas</span>
                 </router-link>
                 <router-link to="/grupos" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        <line x1="19" y1="8" x2="19" y2="14"/>
-                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20"
+                        height="20">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        <line x1="19" y1="8" x2="19" y2="14" />
+                        <line x1="22" y1="11" x2="16" y2="11" />
                     </svg>
                     <span v-if="!sidebarCollapsed">Grupos</span>
                 </router-link>
@@ -204,21 +205,27 @@
                     <div class="modal-body">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Aeropuerto Origen <span v-if="modoEdicion" style="color:#6b5a5a; font-size:0.65rem; text-transform:none; letter-spacing:0;">— no editable</span></label>
+                                <label>Aeropuerto Origen <span v-if="modoEdicion"
+                                        style="color:#6b5a5a; font-size:0.65rem; text-transform:none; letter-spacing:0;">—
+                                        no editable</span></label>
                                 <div class="input-wrapper" :style="modoEdicion ? 'opacity:0.5;' : ''">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                        width="16" height="16">
                                         <circle cx="12" cy="12" r="10" />
                                     </svg>
                                     <select v-model="form.id_origen" :disabled="modoEdicion">
                                         <option value="" disabled>Selecciona origen</option>
-                                        <option v-for="a in aeropuertos" :key="a.id_aeropuerto" :value="a.id_aeropuerto">
+                                        <option v-for="a in aeropuertos" :key="a.id_aeropuerto"
+                                            :value="a.id_aeropuerto">
                                             {{ a.codigo_iata }} — {{ a.ciudad }}
                                         </option>
                                     </select>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Aeropuerto Destino <span v-if="modoEdicion" style="color:#6b5a5a; font-size:0.65rem; text-transform:none; letter-spacing:0;">— no editable</span></label>
+                                <label>Aeropuerto Destino <span v-if="modoEdicion"
+                                        style="color:#6b5a5a; font-size:0.65rem; text-transform:none; letter-spacing:0;">—
+                                        no editable</span></label>
                                 <div class="input-wrapper" :style="modoEdicion ? 'opacity:0.5;' : ''">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
                                         width="16" height="16">
@@ -333,6 +340,42 @@ const distanciasPredef = {
     '4-2': { distancia: 1700, duracion: 170 }, // MTY-CUN
     '3-6': { distancia: 600, duracion: 80 },   // GDL-OAX
     '6-3': { distancia: 600, duracion: 80 },   // OAX-GDL
+    '5-7': { distancia: 1920, duracion: 195 }, // SJD-LAX
+    '7-5': { distancia: 1920, duracion: 195 }, // LAX-SJD
+    '5-8': { distancia: 4200, duracion: 330 }, // SJD-JFK
+    '8-5': { distancia: 4200, duracion: 330 }, // JFK-SJD
+    '5-9': { distancia: 9800, duracion: 720 }, // SJD-MAD
+    '9-5': { distancia: 9800, duracion: 720 }, // MAD-SJD
+    '2-7': { distancia: 3100, duracion: 270 }, // CUN-LAX
+    '7-2': { distancia: 3100, duracion: 270 }, // LAX-CUN
+    '2-8': { distancia: 2800, duracion: 240 }, // CUN-JFK
+    '8-2': { distancia: 2800, duracion: 240 }, // JFK-CUN
+    '2-9': { distancia: 8900, duracion: 630 }, // CUN-MAD
+    '9-2': { distancia: 8900, duracion: 630 }, // MAD-CUN
+    '6-7': { distancia: 2600, duracion: 240 }, // OAX-LAX
+    '7-6': { distancia: 2600, duracion: 240 }, // LAX-OAX
+    '6-8': { distancia: 3600, duracion: 300 }, // OAX-JFK
+    '8-6': { distancia: 3600, duracion: 300 }, // JFK-OAX
+    '6-9': { distancia: 9500, duracion: 660 }, // OAX-MAD
+    '9-6': { distancia: 9500, duracion: 660 }, // MAD-OAX
+    '3-7': { distancia: 2400, duracion: 225 }, // GDL-LAX
+    '7-3': { distancia: 2400, duracion: 225 }, // LAX-GDL
+    '3-8': { distancia: 3700, duracion: 300 }, // GDL-JFK
+    '8-3': { distancia: 3700, duracion: 300 }, // JFK-GDL
+    '3-9': { distancia: 9200, duracion: 660 }, // GDL-MAD
+    '9-3': { distancia: 9200, duracion: 660 }, // MAD-GDL
+    '4-7': { distancia: 2200, duracion: 210 }, // MTY-LAX
+    '7-4': { distancia: 2200, duracion: 210 }, // LAX-MTY
+    '4-8': { distancia: 3100, duracion: 270 }, // MTY-JFK
+    '8-4': { distancia: 3100, duracion: 270 }, // JFK-MTY
+    '4-9': { distancia: 9300, duracion: 660 }, // MTY-MAD
+    '9-4': { distancia: 9300, duracion: 660 }, // MAD-MTY
+    '4-6': { distancia: 820, duracion: 90 },   // MTY-OAX
+    '6-4': { distancia: 820, duracion: 90 },   // OAX-MTY
+    '2-3': { distancia: 1600, duracion: 155 }, // CUN-GDL
+    '3-2': { distancia: 1600, duracion: 155 }, // GDL-CUN
+    '2-5': { distancia: 2100, duracion: 195 }, // CUN-SJD
+    '5-2': { distancia: 2100, duracion: 195 }, // SJD-CUN
 }
 
 const bienvenida = computed(() => {
@@ -395,10 +438,10 @@ const inicializarTabla = () => {
                     data: 'id_ruta', orderable: false,
                     render: id => `
                         <div class="action-btns">
-                            <button class="btn-edit" data-id="${id}" title="Editar">
+                            <button class="btn-view" data-id="${id}" title="Ver vuelos">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
                                 </svg>
                             </button>
                             <button class="btn-delete" data-id="${id}" title="Eliminar">
@@ -416,8 +459,8 @@ const inicializarTabla = () => {
             pageLength: 10,
             dom: '<"dt-top"lf>rt<"dt-bottom"ip>',
             drawCallback: () => {
-                document.querySelectorAll('.btn-edit').forEach(btn => {
-                    btn.onclick = () => abrirModalEditar(Number(btn.dataset.id))
+                document.querySelectorAll('.btn-view').forEach(btn => {
+                    btn.onclick = () => verDetalleRuta(Number(btn.dataset.id))
                 })
                 document.querySelectorAll('.btn-delete').forEach(btn => {
                     btn.onclick = () => confirmarEliminar(Number(btn.dataset.id))
@@ -448,6 +491,49 @@ const abrirModalCrear = () => {
     form.value = formVacio()
     error.value = ''
     mostrarModal.value = true
+}
+
+const verDetalleRuta = async (id) => {
+    const ruta = rutas.value.find(r => r.id_ruta === id)
+    if (!ruta) return
+    try {
+        const res = await axios.get(`${API_URL}/api/vuelos`, { withCredentials: true })
+        const vuelosRuta = res.data.filter(v => v.id_ruta === id)
+        const htmlVuelos = vuelosRuta.length > 0
+            ? vuelosRuta.map(v => `
+                <div style="padding:0.6rem;background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.15);border-radius:8px;margin-bottom:0.5rem;">
+                    <strong style="color:#c9a84c;">${v.codigo_vuelo}</strong>
+                    <span style="color:#b89a8a;font-size:0.8rem;"> — ${v.Avion?.modelo || '—'}</span><br>
+                    <small style="color:#b89a8a;">Salida: ${new Date(v.fecha_salida).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</small>
+                    <span style="margin-left:0.5rem;padding:0.15rem 0.5rem;border-radius:10px;font-size:0.7rem;font-weight:700;background:rgba(76,148,201,0.15);color:#7ab8f5;">${v.estado}</span>
+                </div>`).join('')
+            : '<p style="color:#b89a8a;text-align:center;">Sin vuelos programados en esta ruta</p>'
+
+        window.Swal.fire({
+            title: `${ruta.origen?.codigo_iata} → ${ruta.destino?.codigo_iata}`,
+            html: `
+                <div style="text-align:left;">
+                    <p style="color:#b89a8a;margin-bottom:0.25rem;">
+                        <span style="color:#c9a84c;font-weight:700;">Origen:</span> ${ruta.origen?.ciudad}
+                    </p>
+                    <p style="color:#b89a8a;margin-bottom:0.25rem;">
+                        <span style="color:#c9a84c;font-weight:700;">Destino:</span> ${ruta.destino?.ciudad}
+                    </p>
+                    <p style="color:#b89a8a;margin-bottom:0.25rem;">
+                        <span style="color:#c9a84c;font-weight:700;">Distancia:</span> ${ruta.distancia_km} km
+                    </p>
+                    <p style="color:#b89a8a;margin-bottom:1rem;">
+                        <span style="color:#c9a84c;font-weight:700;">Duración:</span> ${formatDuracion(ruta.duracion_estimada)}
+                    </p>
+                    <p style="color:#c9a84c;font-weight:700;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:0.5rem;">Vuelos en esta ruta</p>
+                    <div style="max-height:250px;overflow-y:auto;">${htmlVuelos}</div>
+                </div>`,
+            background: '#1a0c10', color: '#f0e8e0',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#4a3020',
+            width: '520px'
+        })
+    } catch { console.error('Error al cargar detalle') }
 }
 
 const abrirModalEditar = (id) => {
@@ -943,12 +1029,21 @@ onMounted(async () => {
     transition: all 0.2s;
 }
 
-:deep(.btn-edit) {
+:deep(.btn-view) {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
     background: rgba(201, 168, 76, 0.12);
     color: #c9a84c;
 }
 
-:deep(.btn-edit:hover) {
+:deep(.btn-view:hover) {
     background: rgba(201, 168, 76, 0.25);
 }
 
