@@ -124,7 +124,8 @@ const actualizarVuelo = async (req, res) => {
     });
 
     // Validar estado completado solo si fecha llegada ya pasó
-    if (estado === 'completado' && new Date(vuelo.fecha_llegada) > new Date()) {
+    const fechaLlegadaFinal = fecha_llegada ? new Date(fecha_llegada) : new Date(vuelo.fecha_llegada)
+    if (estado === 'completado' && fechaLlegadaFinal > new Date()) {
       return res.status(400).json({ message: "No se puede marcar como completado antes de la fecha de llegada." });
     }
 
