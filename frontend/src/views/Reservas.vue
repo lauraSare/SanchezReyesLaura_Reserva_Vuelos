@@ -382,6 +382,12 @@ const inicializarTabla = () => {
                         const r = reservas.value.find(r => r.id_reserva === id)
                         const esGrupal = r?.id_grupo
                         return `<div class="action-btns">
+                            <button class="btn-view" data-id="${id}" title="Ver detalle">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
                             ${!esGrupal ? `<button class="btn-boleto" data-id="${id}" title="Ver boleto">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                                     <path d="M2 9a1 1 0 0 1 0-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2a1 1 0 0 1 0 2v2a1 1 0 0 1 0 2v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2a1 1 0 0 1 0-2V9z"/>
@@ -411,6 +417,9 @@ const inicializarTabla = () => {
             pageLength: 10,
             dom: '<"dt-top"lf>rt<"dt-bottom"ip>',
             drawCallback: () => {
+                document.querySelectorAll('.btn-view').forEach(btn => {
+                    btn.onclick = () => verDetalleReserva(Number(btn.dataset.id))
+                })
                 document.querySelectorAll('.btn-boleto').forEach(btn => {
                     btn.onclick = () => verBoleto(Number(btn.dataset.id))
                 })
@@ -422,6 +431,32 @@ const inicializarTabla = () => {
                 })
             }
         })
+    })
+}
+
+const verDetalleReserva = (id) => {
+    const r = reservas.value.find(r => r.id_reserva === id)
+    if (!r) return
+    const pasajero = r.Pasajero
+    const vuelo = r.Vuelo
+    const estadoColor = r.estado === 'confirmada' ? '#7fd4a0' : r.estado === 'cancelada' ? '#f08080' : '#c9a84c'
+    const estadoBg = r.estado === 'confirmada' ? 'rgba(46,155,90,0.15)' : r.estado === 'cancelada' ? 'rgba(155,28,46,0.2)' : 'rgba(201,168,76,0.15)'
+    window.Swal.fire({
+        title: `Reserva #${r.id_reserva}`,
+        html: `
+            <div style="text-align:left;">
+                <p style="margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Estado:</span>
+                    <span style="margin-left:0.5rem;padding:0.15rem 0.6rem;border-radius:10px;font-size:0.75rem;font-weight:700;background:${estadoBg};color:${estadoColor};">${r.estado}</span>
+                </p>
+                <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Fecha:</span> ${formatFecha(r.fecha_reserva)}</p>
+                <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Pasajero:</span> ${pasajero ? pasajero.nombre + ' ' + pasajero.primer_apellido : '—'}</p>
+                <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Vuelo:</span> ${vuelo ? vuelo.codigo_vuelo : '—'}</p>
+                <p style="color:#b89a8a;margin-bottom:0.25rem;"><span style="color:#c9a84c;font-weight:700;">Tipo:</span> ${r.id_grupo ? 'Grupal' : 'Individual'}</p>
+            </div>`,
+        background: '#1a0c10', color: '#f0e8e0',
+        confirmButtonText: 'Cerrar',
+        confirmButtonColor: '#4a3020',
+        width: '480px'
     })
 }
 
@@ -1800,6 +1835,24 @@ onMounted(async () => {
 
 :deep(.btn-delete:hover) {
     background: rgba(155, 28, 46, 0.3);
+}
+
+:deep(.btn-view) {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(201, 168, 76, 0.12);
+    color: #c9a84c;
+}
+
+:deep(.btn-view:hover) {
+    background: rgba(201, 168, 76, 0.25);
 }
 
 :deep(.btn-boleto) {
